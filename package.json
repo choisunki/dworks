@@ -1,0 +1,40 @@
+{
+  "name": "dworks",
+  "version": "1.0.0",
+  "description": "DWorks browser modules for GitHub/CDN distribution",
+  "type": "module",
+  "main": "./dist/dworks.js",
+  "module": "./dist/dworks.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/dworks.esm.js",
+      "default": "./dist/dworks.js"
+    },
+    "./video": {
+      "import": "./dist/dworks-video.esm.js",
+      "default": "./dist/dworks-video.js"
+    }
+  },
+  "unpkg": "./dist/dworks.min.js",
+  "jsdelivr": "./dist/dworks.min.js",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
+    "build": "node scripts/build.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "keywords": [
+    "video",
+    "cdn",
+    "browser",
+    "module"
+  ],
+  "license": "MIT"
+}
