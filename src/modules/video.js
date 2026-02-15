@@ -29,6 +29,168 @@ var rootGlobal = typeof globalThis !== 'undefined'
     return el && el.tagName === 'VIDEO';
   }
 
+  /**
+   * autoplay 정책 등으로 재생이 차단된 상황을 외부에 알린다.
+   * @param {HTMLVideoElement} videoEl
+   * @param {Object} hooks
+   * @param {*} err
+   */
+  function reportPlayBlocked(videoEl, hooks, err) {
+    hooks = hooks || {};
+
+    try {
+      var errName = err && err.name ? err.name : 'Error';
+      var errMsg = err && err.message ? err.message : String(err || '');
+      console.warn('[DWorksVideo] 재생 실패:', errName, errMsg);
+    } catch (e1) {}
+
+    if (hooks.log) {
+      try {
+        console.info('[DWorksVideo][debug] play-blocked detail:', {
+          video: videoEl,
+          error: err || null
+        });
+      } catch (e1_1) {}
+    }
+
+    if (typeof hooks.onPlaybackBlocked === 'function') {
+      try {
+        hooks.onPlaybackBlocked({
+          video: videoEl,
+          error: err || null,
+          reason: 'play_blocked'
+        });
+      } catch (e2) {}
+    }
+
+    if (typeof rootGlobal.CustomEvent === 'function') {
+      try {
+        var evt = new CustomEvent('dworks-video:play-blocked', {
+          detail: {
+            video: videoEl,
+            error: err || null,
+            reason: 'play_blocked'
+          }
+        });
+        document.dispatchEvent(evt);
+      } catch (e3) {}
+    }
+  }
+
+  /**
+   * video id 기준으로 커스텀 컨트롤의 접근성 상태를 동기화한다.
+   * 인스턴스와 무관하게 동작하도록 전역 유틸로 유지한다.
+   * @param {String} vid
+   */
+  function syncVctrlA11yByVid(vid) {
+    if (!vid) return;
+
+    var el = document.getElementById(vid);
+    if (!isVideo(el)) return;
+
+    var muted = !!el.muted;
+    var ctrls = qa('.ctrl[data-target="' + vid + '"]');
+    if (!ctrls || !ctrls.length) return;
+
+    for (var i = 0; i < ctrls.length; i++) {
+      var ctrl = ctrls[i];
+
+      if (ctrl.classList) {
+        if (muted) ctrl.classList.add('muted');
+        else ctrl.classList.remove('muted');
+      }
+
+      try { ctrl.setAttribute('aria-label', '비디오 볼륨 제어'); } catch (e1) {}
+
+      var offBtn = ctrl.querySelector('.vctrl-volume-off');
+      var onBtn  = ctrl.querySelector('.vctrl-volume-on');
+      var status = ctrl.querySelector('.vctrl-status');
+
+      if (offBtn) {
+        try {
+          offBtn.setAttribute('aria-hidden', String(!muted));
+          offBtn.setAttribute('tabindex', muted ? '0' : '-1');
+        } catch (e2) {}
+      }
+
+      if (onBtn) {
+        try {
+          onBtn.setAttribute('aria-hidden', String(muted));
+          onBtn.setAttribute('tabindex', muted ? '-1' : '0');
+        } catch (e3) {}
+      }
+
+      if (status) status.textContent = muted ? '현재 음소거 상태' : '현재 볼륨 켜짐 상태';
+    }
+  }
+
+  /**
+   * video id 기준 음소거/음성 재생 상태를 제어한다.
+   * @param {String} vid
+   * @param {Boolean} enableSound
+   */
+  function setVideoVolumeByVid(vid, enableSound, hooks) {
+    if (!vid) return;
+
+    var el = document.getElementById(vid);
+    if (!isVideo(el)) return;
+
+    el.muted = !enableSound;
+
+    if (enableSound && el.paused) controlVideo(el, true, hooks);
+
+    syncVctrlA11yByVid(vid);
+  }
+
+  // 전역 document 위임 클릭 핸들러는 1개만 유지하고, 인스턴스별로 ref count 관리.
+  var globalCtrlDelegation = {
+    bound: false,
+    refs: 0,
+    handler: null
+  };
+
+  function bindGlobalVideoCtrls() {
+    if (globalCtrlDelegation.bound) {
+      globalCtrlDelegation.refs += 1;
+      return;
+    }
+
+    globalCtrlDelegation.handler = function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.ctrl .vctrl') : null;
+      if (!btn) return;
+
+      if (e.preventDefault) e.preventDefault();
+
+      var ctrl = btn.closest ? btn.closest('.ctrl') : null;
+      if (!ctrl) return;
+
+      var vid = ctrl.getAttribute('data-target');
+      var action = btn.getAttribute('data-action'); // mute|unmute
+      if (!vid) return;
+
+      setVideoVolumeByVid(vid, action === 'unmute');
+    };
+
+    document.addEventListener('click', globalCtrlDelegation.handler, false);
+    globalCtrlDelegation.bound = true;
+    globalCtrlDelegation.refs = 1;
+  }
+
+  function unbindGlobalVideoCtrls() {
+    if (!globalCtrlDelegation.bound) return;
+
+    globalCtrlDelegation.refs -= 1;
+    if (globalCtrlDelegation.refs > 0) return;
+
+    try {
+      document.removeEventListener('click', globalCtrlDelegation.handler, false);
+    } catch (e) {}
+
+    globalCtrlDelegation.handler = null;
+    globalCtrlDelegation.bound = false;
+    globalCtrlDelegation.refs = 0;
+  }
+
   // ratio: '16/9' -> '56.25%'
   function calcAspectPad(ratio) {
     var fallback = '56.25%';
@@ -53,7 +215,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
    * @param {HTMLVideoElement} videoEl
    * @param {Boolean} shouldPlay
    */
-  function controlVideo(videoEl, shouldPlay) {
+  function controlVideo(videoEl, shouldPlay, hooks) {
     if (!videoEl) return;
 
     if (shouldPlay) {
@@ -62,8 +224,14 @@ var rootGlobal = typeof globalThis !== 'undefined'
 
       try {
         var p = videoEl.play();
-        if (p && typeof p.catch === 'function') p.catch(function () {});
-      } catch (e) {}
+        if (p && typeof p.catch === 'function') {
+          p.catch(function (err) {
+            reportPlayBlocked(videoEl, hooks, err);
+          });
+        }
+      } catch (e) {
+        reportPlayBlocked(videoEl, hooks, e);
+      }
       return;
     }
 
@@ -192,9 +360,10 @@ var rootGlobal = typeof globalThis !== 'undefined'
    * 비디오 모듈 인스턴스를 생성한다.
    *
    * options:
-   * - vdos: [{ code, mount, observe, play_on_enter, pause_on_leave, view_threshold, vctrl, vid, ratio, fit, poster, ... }]
+   * - vdos: [{ url, mount, observe, play_on_enter, pause_on_leave, view_threshold, vctrl, vid, ratio, fit, poster, ... }]
    * - icons: { volume_on, volume_off } (선택)
    * - log: Boolean (선택)
+   * - onPlaybackBlocked: Function ({ video, error, reason }) (선택)
    * - viewportChecker: (선택) IO 미지원 시 폴백으로 jQuery viewportChecker를 사용할 경우:
    *   { enabled:true, $: window.jQuery, pluginName:'viewportChecker' }
    */
@@ -208,14 +377,25 @@ var rootGlobal = typeof globalThis !== 'undefined'
 
     var state = {
       _vctrlBound: false,
-      _vctrlHandler: null,
       _vdoObserver: null,
       _vdoMap: null
     };
 
-    function log() {
+    function info() {
       if (!cfg.log) return;
-      try { console.log.apply(console, arguments); } catch (e) {}
+      try { console.info.apply(console, arguments); } catch (e) {}
+    }
+
+    function debugInfo(label, detail) {
+      if (!cfg.log) return;
+      try { console.info(label, detail); } catch (e) {}
+    }
+
+    // 핵심 실패는 항상 출력하고, cfg.log=true일 때만 상세 컨텍스트를 추가한다.
+    function coreError(message, detail) {
+      try { console.error(message); } catch (e0) {}
+      if (!cfg.log || typeof detail === 'undefined') return;
+      debugInfo('[DWorksVideo][debug] detail:', detail);
     }
 
     /**
@@ -223,48 +403,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
      * @param {String} vid
      */
     function syncVctrlA11y(vid) {
-      if (!vid) return;
-
-      var el = document.getElementById(vid);
-      if (!isVideo(el)) return;
-
-      var muted = !!el.muted;
-
-      var ctrls = qa('.ctrl[data-target="' + vid + '"]');
-      if (!ctrls || !ctrls.length) return;
-
-      for (var i = 0; i < ctrls.length; i++) {
-        var ctrl = ctrls[i];
-
-        if (ctrl.classList) {
-          if (muted) ctrl.classList.add('muted');
-          else ctrl.classList.remove('muted');
-        }
-
-        try { ctrl.setAttribute('aria-label', '비디오 볼륨 제어'); } catch (e1) {}
-
-        var offBtn = ctrl.querySelector('.vctrl-volume-off');
-        var onBtn  = ctrl.querySelector('.vctrl-volume-on');
-        var status = ctrl.querySelector('.vctrl-status');
-
-        // muted=true: "볼륨 켜기" 버튼만 접근 가능
-        if (offBtn) {
-          try {
-            offBtn.setAttribute('aria-hidden', String(!muted));
-            offBtn.setAttribute('tabindex', muted ? '0' : '-1');
-          } catch (e2) {}
-        }
-
-        // muted=false: "볼륨 끄기" 버튼만 접근 가능
-        if (onBtn) {
-          try {
-            onBtn.setAttribute('aria-hidden', String(muted));
-            onBtn.setAttribute('tabindex', muted ? '-1' : '0');
-          } catch (e3) {}
-        }
-
-        if (status) status.textContent = muted ? '현재 음소거 상태' : '현재 볼륨 켜짐 상태';
-      }
+      syncVctrlA11yByVid(vid);
     }
 
     /**
@@ -273,45 +412,20 @@ var rootGlobal = typeof globalThis !== 'undefined'
      * @param {Boolean} enableSound - true: 소리 켜기 / false: 소리 끄기(음소거)
      */
     function vdoVolume(vid, enableSound) {
-      if (!vid) return;
-
-      var el = document.getElementById(vid);
-      if (!isVideo(el)) return;
-
-      el.muted = !enableSound;
-
-      try {
-        if (enableSound && el.paused) el.play();
-      } catch (e) {}
-
-      syncVctrlA11y(vid);
+      setVideoVolumeByVid(vid, enableSound, {
+        log: cfg.log,
+        onPlaybackBlocked: cfg.onPlaybackBlocked
+      });
     }
 
     /**
      * 커스텀 비디오 컨트롤 클릭 이벤트 바인딩
-     * - document 레벨 이벤트 위임(1회)
+     * - document 레벨 전역 이벤트 위임(모듈 전체 1회)
      */
     function bindVideoCtrls() {
       if (state._vctrlBound) return;
       state._vctrlBound = true;
-
-      state._vctrlHandler = function (e) {
-        var btn = e.target && e.target.closest ? e.target.closest('.ctrl .vctrl') : null;
-        if (!btn) return;
-
-        if (e.preventDefault) e.preventDefault();
-
-        var ctrl = btn.closest ? btn.closest('.ctrl') : null;
-        if (!ctrl) return;
-
-        var vid = ctrl.getAttribute('data-target');
-        var action = btn.getAttribute('data-action'); // mute|unmute
-        if (!vid) return;
-
-        vdoVolume(vid, action === 'unmute');
-      };
-
-      document.addEventListener('click', state._vctrlHandler, false);
+      bindGlobalVideoCtrls();
     }
 
     /**
@@ -352,7 +466,12 @@ var rootGlobal = typeof globalThis !== 'undefined'
                 repeat: true,
                 callbackFunction: function (elem, action) {
                   if (action === 'add') {
-                    if (opt.play_on_enter) controlVideo(videoEl, true);
+                    if (opt.play_on_enter) {
+                      controlVideo(videoEl, true, {
+                        log: cfg.log,
+                        onPlaybackBlocked: cfg.onPlaybackBlocked
+                      });
+                    }
                   } else {
                     if (opt.pause_on_leave) controlVideo(videoEl, false);
                   }
@@ -389,7 +508,12 @@ var rootGlobal = typeof globalThis !== 'undefined'
           var isIn = entry.isIntersecting && entry.intersectionRatio >= threshold;
 
           if (isIn) {
-            if (opt.play_on_enter) controlVideo(videoEl, true);
+            if (opt.play_on_enter) {
+              controlVideo(videoEl, true, {
+                log: cfg.log,
+                onPlaybackBlocked: cfg.onPlaybackBlocked
+              });
+            }
           } else {
             if (opt.pause_on_leave) controlVideo(videoEl, false);
           }
@@ -428,9 +552,18 @@ var rootGlobal = typeof globalThis !== 'undefined'
 
       for (var i = 0; i < list.length; i++) {
         var item = list[i];
-        if (!item || !item.code || !item.mount) continue;
+        if (!item || !item.mount) continue;
 
-        var html = vdoTag(item.code, item, icons);
+        var vdoPath = item.url;
+        if (!vdoPath) {
+          coreError(
+            '[DWorksVideo] 비디오 경로(url)가 누락되었습니다. index: ' + i,
+            { index: i, item: item }
+          );
+          continue;
+        }
+
+        var html = vdoTag(vdoPath, item, icons);
 
         // vdoTag가 vid 자동 생성했으면 item에 반영
         if (item.vctrl !== false && !item.vid) {
@@ -441,7 +574,14 @@ var rootGlobal = typeof globalThis !== 'undefined'
         }
 
         var mountEl = q(item.mount);
-        if (mountEl) mountEl.innerHTML = html;
+        if (mountEl) {
+          mountEl.innerHTML = html;
+        } else {
+          coreError(
+            '[DWorksVideo] 엘리먼트를 찾을 수 없습니다. mount: ' + item.mount,
+            { index: i, mount: item.mount, item: item }
+          );
+        }
 
         if (item.vid) syncVctrlA11y(item.vid);
       }
@@ -449,7 +589,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
       bindVideoCtrls();
       bindVideoVisibility(list);
 
-      log('[dworks-video] init ok');
+      info('[DWorksVideo] init ok');
       return api;
     }
 
@@ -463,13 +603,12 @@ var rootGlobal = typeof globalThis !== 'undefined'
       }
       state._vdoMap = null;
 
-      if (state._vctrlHandler) {
-        try { document.removeEventListener('click', state._vctrlHandler, false); } catch (e2) {}
-        state._vctrlHandler = null;
+      if (state._vctrlBound) {
+        unbindGlobalVideoCtrls();
       }
       state._vctrlBound = false;
 
-      log('[dworks-video] destroy ok');
+      info('[DWorksVideo] destroy ok');
     }
 
     // public instance api

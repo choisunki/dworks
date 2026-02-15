@@ -35,6 +35,129 @@ function qa(sel, root) {
 function isVideo(el) {
   return el && el.tagName === "VIDEO";
 }
+function reportPlayBlocked(videoEl, hooks, err) {
+  hooks = hooks || {};
+  try {
+    var errName = err && err.name ? err.name : "Error";
+    var errMsg = err && err.message ? err.message : String(err || "");
+    console.warn("[DWorksVideo] \uC7AC\uC0DD \uC2E4\uD328:", errName, errMsg);
+  } catch (e1) {
+  }
+  if (hooks.log) {
+    try {
+      console.info("[DWorksVideo][debug] play-blocked detail:", {
+        video: videoEl,
+        error: err || null
+      });
+    } catch (e1_1) {
+    }
+  }
+  if (typeof hooks.onPlaybackBlocked === "function") {
+    try {
+      hooks.onPlaybackBlocked({
+        video: videoEl,
+        error: err || null,
+        reason: "play_blocked"
+      });
+    } catch (e2) {
+    }
+  }
+  if (typeof rootGlobal.CustomEvent === "function") {
+    try {
+      var evt = new CustomEvent("dworks-video:play-blocked", {
+        detail: {
+          video: videoEl,
+          error: err || null,
+          reason: "play_blocked"
+        }
+      });
+      document.dispatchEvent(evt);
+    } catch (e3) {
+    }
+  }
+}
+function syncVctrlA11yByVid(vid) {
+  if (!vid) return;
+  var el = document.getElementById(vid);
+  if (!isVideo(el)) return;
+  var muted = !!el.muted;
+  var ctrls = qa('.ctrl[data-target="' + vid + '"]');
+  if (!ctrls || !ctrls.length) return;
+  for (var i = 0; i < ctrls.length; i++) {
+    var ctrl = ctrls[i];
+    if (ctrl.classList) {
+      if (muted) ctrl.classList.add("muted");
+      else ctrl.classList.remove("muted");
+    }
+    try {
+      ctrl.setAttribute("aria-label", "\uBE44\uB514\uC624 \uBCFC\uB968 \uC81C\uC5B4");
+    } catch (e1) {
+    }
+    var offBtn = ctrl.querySelector(".vctrl-volume-off");
+    var onBtn = ctrl.querySelector(".vctrl-volume-on");
+    var status = ctrl.querySelector(".vctrl-status");
+    if (offBtn) {
+      try {
+        offBtn.setAttribute("aria-hidden", String(!muted));
+        offBtn.setAttribute("tabindex", muted ? "0" : "-1");
+      } catch (e2) {
+      }
+    }
+    if (onBtn) {
+      try {
+        onBtn.setAttribute("aria-hidden", String(muted));
+        onBtn.setAttribute("tabindex", muted ? "-1" : "0");
+      } catch (e3) {
+      }
+    }
+    if (status) status.textContent = muted ? "\uD604\uC7AC \uC74C\uC18C\uAC70 \uC0C1\uD0DC" : "\uD604\uC7AC \uBCFC\uB968 \uCF1C\uC9D0 \uC0C1\uD0DC";
+  }
+}
+function setVideoVolumeByVid(vid, enableSound, hooks) {
+  if (!vid) return;
+  var el = document.getElementById(vid);
+  if (!isVideo(el)) return;
+  el.muted = !enableSound;
+  if (enableSound && el.paused) controlVideo(el, true, hooks);
+  syncVctrlA11yByVid(vid);
+}
+var globalCtrlDelegation = {
+  bound: false,
+  refs: 0,
+  handler: null
+};
+function bindGlobalVideoCtrls() {
+  if (globalCtrlDelegation.bound) {
+    globalCtrlDelegation.refs += 1;
+    return;
+  }
+  globalCtrlDelegation.handler = function(e) {
+    var btn = e.target && e.target.closest ? e.target.closest(".ctrl .vctrl") : null;
+    if (!btn) return;
+    if (e.preventDefault) e.preventDefault();
+    var ctrl = btn.closest ? btn.closest(".ctrl") : null;
+    if (!ctrl) return;
+    var vid = ctrl.getAttribute("data-target");
+    var action = btn.getAttribute("data-action");
+    if (!vid) return;
+    setVideoVolumeByVid(vid, action === "unmute");
+  };
+  document.addEventListener("click", globalCtrlDelegation.handler, false);
+  globalCtrlDelegation.bound = true;
+  globalCtrlDelegation.refs = 1;
+}
+function unbindGlobalVideoCtrls() {
+  if (!globalCtrlDelegation.bound) return;
+  globalCtrlDelegation.refs -= 1;
+  if (globalCtrlDelegation.refs > 0) return;
+  try {
+    document.removeEventListener("click", globalCtrlDelegation.handler, false);
+  } catch (e) {
+  }
+  globalCtrlDelegation.handler = null;
+  globalCtrlDelegation.bound = false;
+  globalCtrlDelegation.refs = 0;
+}
 function calcAspectPad(ratio) {
   var fallback = "56.25%";
   var src = String(ratio || "16/9");
@@ -47,15 +170,19 @@ function calcAspectPad(ratio) {
   if (!isFinite(pct) || pct <= 0) return fallback;
   return pct.toFixed(2) + "%";
 }
-function controlVideo(videoEl, shouldPlay) {
+function controlVideo(videoEl, shouldPlay, hooks) {
   if (!videoEl) return;
   if (shouldPlay) {
     if (!videoEl.paused && !videoEl.ended) return;
     try {
       var p = videoEl.play();
-      if (p && typeof p.catch === "function") p.catch(function() {
-      });
+      if (p && typeof p.catch === "function") {
+        p.catch(function(err) {
+          reportPlayBlocked(videoEl, hooks, err);
+        });
+      }
     } catch (e) {
+      reportPlayBlocked(videoEl, hooks, e);
     }
     return;
   }
@@ -159,80 +286,44 @@ function create(options) {
   }, options || {});
   var state = {
     _vctrlBound: false,
-    _vctrlHandler: null,
     _vdoObserver: null,
     _vdoMap: null
   };
-  function log() {
+  function info() {
     if (!cfg.log) return;
     try {
-      console.log.apply(console, arguments);
+      console.info.apply(console, arguments);
     } catch (e) {
     }
+  }
+  function debugInfo(label, detail) {
+    if (!cfg.log) return;
+    try {
+      console.info(label, detail);
+    } catch (e) {
+    }
+  }
+  function coreError(message, detail) {
+    try {
+      console.error(message);
+    } catch (e0) {
+    }
+    if (!cfg.log || typeof detail === "undefined") return;
+    debugInfo("[DWorksVideo][debug] detail:", detail);
   }
   function syncVctrlA11y(vid) {
-    if (!vid) return;
-    var el = document.getElementById(vid);
-    if (!isVideo(el)) return;
-    var muted = !!el.muted;
-    var ctrls = qa('.ctrl[data-target="' + vid + '"]');
-    if (!ctrls || !ctrls.length) return;
-    for (var i = 0; i < ctrls.length; i++) {
-      var ctrl = ctrls[i];
-      if (ctrl.classList) {
-        if (muted) ctrl.classList.add("muted");
-        else ctrl.classList.remove("muted");
-      }
-      try {
-        ctrl.setAttribute("aria-label", "\uBE44\uB514\uC624 \uBCFC\uB968 \uC81C\uC5B4");
-      } catch (e1) {
-      }
-      var offBtn = ctrl.querySelector(".vctrl-volume-off");
-      var onBtn = ctrl.querySelector(".vctrl-volume-on");
-      var status = ctrl.querySelector(".vctrl-status");
-      if (offBtn) {
-        try {
-          offBtn.setAttribute("aria-hidden", String(!muted));
-          offBtn.setAttribute("tabindex", muted ? "0" : "-1");
-        } catch (e2) {
-        }
-      }
-      if (onBtn) {
-        try {
-          onBtn.setAttribute("aria-hidden", String(muted));
-          onBtn.setAttribute("tabindex", muted ? "-1" : "0");
-        } catch (e3) {
-        }
-      }
-      if (status) status.textContent = muted ? "\uD604\uC7AC \uC74C\uC18C\uAC70 \uC0C1\uD0DC" : "\uD604\uC7AC \uBCFC\uB968 \uCF1C\uC9D0 \uC0C1\uD0DC";
-    }
+    syncVctrlA11yByVid(vid);
   }
   function vdoVolume(vid, enableSound) {
-    if (!vid) return;
-    var el = document.getElementById(vid);
-    if (!isVideo(el)) return;
-    el.muted = !enableSound;
-    try {
-      if (enableSound && el.paused) el.play();
-    } catch (e) {
-    }
-    syncVctrlA11y(vid);
+    setVideoVolumeByVid(vid, enableSound, {
+      log: cfg.log,
+      onPlaybackBlocked: cfg.onPlaybackBlocked
+    });
   }
   function bindVideoCtrls() {
     if (state._vctrlBound) return;
     state._vctrlBound = true;
-    state._vctrlHandler = function(e) {
-      var btn = e.target && e.target.closest ? e.target.closest(".ctrl .vctrl") : null;
-      if (!btn) return;
-      if (e.preventDefault) e.preventDefault();
-      var ctrl = btn.closest ? btn.closest(".ctrl") : null;
-      if (!ctrl) return;
-      var vid = ctrl.getAttribute("data-target");
-      var action = btn.getAttribute("data-action");
-      if (!vid) return;
-      vdoVolume(vid, action === "unmute");
-    };
-    document.addEventListener("click", state._vctrlHandler, false);
+    bindGlobalVideoCtrls();
   }
   function bindVideoVisibility(list) {
     if (!list || !list.length) return;
@@ -258,7 +349,12 @@ function create(options) {
               repeat: true,
               callbackFunction: function(elem, action) {
                 if (action === "add") {
-                  if (opt.play_on_enter) controlVideo(videoEl, true);
+                  if (opt.play_on_enter) {
+                    controlVideo(videoEl, true, {
+                      log: cfg.log,
+                      onPlaybackBlocked: cfg.onPlaybackBlocked
+                    });
+                  }
                 } else {
                   if (opt.pause_on_leave) controlVideo(videoEl, false);
                 }
@@ -289,7 +385,12 @@ function create(options) {
         var threshold = typeof opt.view_threshold === "number" ? opt.view_threshold : 0.35;
         var isIn = entry.isIntersecting && entry.intersectionRatio >= threshold;
         if (isIn) {
-          if (opt.play_on_enter) controlVideo(videoEl, true);
+          if (opt.play_on_enter) {
+            controlVideo(videoEl, true, {
+              log: cfg.log,
+              onPlaybackBlocked: cfg.onPlaybackBlocked
+            });
+          }
         } else {
           if (opt.pause_on_leave) controlVideo(videoEl, false);
         }
@@ -316,8 +417,16 @@ function create(options) {
     var icons = cfg.icons || defaultIcons;
     for (var i = 0; i < list.length; i++) {
       var item = list[i];
-      if (!item || !item.code || !item.mount) continue;
-      var html = vdoTag(item.code, item, icons);
+      if (!item || !item.mount) continue;
+      var vdoPath = item.url;
+      if (!vdoPath) {
+        coreError(
+          "[DWorksVideo] \uBE44\uB514\uC624 \uACBD\uB85C(url)\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. index: " + i,
+          { index: i, item }
+        );
+        continue;
+      }
+      var html = vdoTag(vdoPath, item, icons);
       if (item.vctrl !== false && !item.vid) {
         try {
           var m = String(html || "").match(/<video\s+[^>]*id=\"([^\"]+)\"/i);
@@ -326,12 +435,19 @@ function create(options) {
         }
       }
       var mountEl = q(item.mount);
-      if (mountEl) mountEl.innerHTML = html;
+      if (mountEl) {
+        mountEl.innerHTML = html;
+      } else {
+        coreError(
+          "[DWorksVideo] \uC5D8\uB9AC\uBA3C\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. mount: " + item.mount,
+          { index: i, mount: item.mount, item }
+        );
+      }
       if (item.vid) syncVctrlA11y(item.vid);
     }
     bindVideoCtrls();
     bindVideoVisibility(list);
-    log("[dworks-video] init ok");
+    info("[DWorksVideo] init ok");
     return api;
   }
   function destroy() {
@@ -343,15 +459,11 @@ function create(options) {
       state._vdoObserver = null;
     }
     state._vdoMap = null;
-    if (state._vctrlHandler) {
-      try {
-        document.removeEventListener("click", state._vctrlHandler, false);
-      } catch (e2) {
-      }
-      state._vctrlHandler = null;
+    if (state._vctrlBound) {
+      unbindGlobalVideoCtrls();
     }
     state._vctrlBound = false;
-    log("[dworks-video] destroy ok");
+    info("[DWorksVideo] destroy ok");
   }
   var api = {
     init,
