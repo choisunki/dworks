@@ -1,0 +1,268 @@
+@use "sass:math";
+
+$vw-fixed: true !default;
+
+@function strip-unit($value) {
+  @return math.div($value, ($value * 0 + 1));
+}
+
+@function vwp($px, $base: 1920) {
+  @if not math.is-unitless($px) {
+    $px: strip-unit($px);
+  }
+  $min: math.div($px, $base) * 1440px;
+  $vw: math.div($px, $base) * 100vw;
+  @return clamp(#{$min}, #{$vw}, #{$vw});
+}
+
+@function vwf($value, $base: 1920) {
+  @if not (math.unit($value) == "px" or math.is-unitless($value)) {
+    @error "vwf() only accepts px or unitless values. (received: #{$value})";
+  }
+
+  $px: null;
+  @if math.is-unitless($value) {
+    $px: $value * 1px;
+  } @else {
+    $px: $value;
+  }
+  $vw: math.div(strip-unit($px), $base) * 100vw;
+  $min: math.div(strip-unit($px), $base) * 1440px;
+
+  @return clamp(#{$min}, #{$vw}, #{$px});
+}
+
+@function vw($value, $base: 1920, $fixed: null) {
+  @if $fixed == null {
+    $fixed: $vw-fixed;
+  }
+
+  @if $fixed {
+    @return vwf($value, $base);
+  }
+
+  @return vwp($value, $base);
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.vdo__wrap {
+  position: relative;
+  width: 100%;
+  background: #000;
+  overflow: hidden;
+  aspect-ratio: var(--ar, 16 / 9);
+
+  .vdo__spacer {
+    display: none;
+    width: 100%;
+    height: 0;
+    padding-top: var(--ar-pad, 56.25%);
+  }
+
+  .video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: var(--fit, cover);
+    position: relative;
+    z-index: 1;
+  }
+
+  @supports not (aspect-ratio: 1 / 1) {
+    .vdo__spacer {
+      display: block;
+    }
+
+    .video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .ctrl {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    z-index: 2;
+    padding: vw(20);
+    gap: 20px;
+
+    button {
+      appearance: none;
+      background: rgb(0 0 0 / 50%);
+      border: 0;
+      padding: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      border-radius: 50%;
+      transition: opacity 0.2s ease, transform 0.05s ease, box-shadow 0.05s ease;
+      position: relative;
+      overflow: visible;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 25%);
+
+      &:active {
+        transform: translateY(0.5px) scale(0.95);
+        box-shadow: inset 0 1px 3px rgb(0 0 0 / 35%);
+      }
+
+      &:focus-visible {
+        outline: 2px solid rgb(255 255 255 / 90%);
+        outline-offset: 2px;
+      }
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
+    @keyframes vdo-wave {
+      0% {
+        transform: translate(-50%, -50%) scale(0.6);
+        opacity: 0.55;
+      }
+
+      60% {
+        opacity: 0.18;
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 0;
+      }
+    }
+
+    @keyframes vdo-wave-2 {
+      0% {
+        transform: translate(-50%, -50%) scale(0.6);
+        opacity: 0;
+      }
+
+      20% {
+        opacity: 0.45;
+      }
+
+      80% {
+        opacity: 0.14;
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1.7);
+        opacity: 0;
+      }
+    }
+
+    .vctrl {
+      z-index: 1;
+
+      .vctrl-popover {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 8px);
+        padding: 6px 9px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1;
+        white-space: nowrap;
+        color: #fff;
+        background: rgb(0 0 0 / 78%);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(3px);
+        transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+        pointer-events: none;
+      }
+
+      .vctrl-popover::after {
+        content: "";
+        position: absolute;
+        right: 12px;
+        top: 100%;
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid rgb(0 0 0 / 78%);
+      }
+
+      &:hover .vctrl-popover,
+      &:focus-visible .vctrl-popover {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+
+    &:not(.muted) {
+      .vctrl-volume-on {
+        position: relative;
+      }
+
+      .vctrl-volume-on::before,
+      .vctrl-volume-on::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        border: 2px solid currentcolor;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .vctrl-volume-on::before {
+        animation: vdo-wave 1.2s ease-out infinite;
+      }
+
+      .vctrl-volume-on::after {
+        animation: vdo-wave-2 1.2s ease-out infinite;
+        animation-delay: 0.25s;
+      }
+    }
+
+    &.muted {
+      .vctrl-volume-off {
+        display: inline-flex;
+      }
+
+      .vctrl-volume-on {
+        display: none;
+      }
+    }
+
+    &:not(.muted) {
+      .vctrl-volume-off {
+        display: none;
+      }
+
+      .vctrl-volume-on {
+        display: inline-flex;
+      }
+    }
+  }
+}

@@ -1,0 +1,196 @@
+/*!
+ * @name dworks-video
+ * @version v1.0.0
+ * @author Choi Sunki <sk@daltan.net>
+ * @description Operational Video Engine for DALTAN WORKS
+ * @repository https://github.com/choisunki/dworks
+ * @license MIT
+ * @preserve
+ */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.vdo__wrap {
+  position: relative;
+  width: 100%;
+  background: #000;
+  overflow: hidden;
+  aspect-ratio: var(--ar, 16/9);
+}
+.vdo__wrap .vdo__spacer {
+  display: none;
+  width: 100%;
+  height: 0;
+  padding-top: var(--ar-pad, 56.25%);
+}
+.vdo__wrap .video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: var(--fit, cover);
+  position: relative;
+  z-index: 1;
+}
+@supports not (aspect-ratio: 1/1) {
+  .vdo__wrap .vdo__spacer {
+    display: block;
+  }
+  .vdo__wrap .video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+.vdo__wrap .ctrl {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+  padding: clamp(15px, 1.0416666667vw, 20px);
+  gap: 20px;
+}
+.vdo__wrap .ctrl button {
+  appearance: none;
+  background: rgba(0, 0, 0, 0.5);
+  border: 0;
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  border-radius: 50%;
+  transition: opacity 0.2s ease, transform 0.05s ease, box-shadow 0.05s ease;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+.vdo__wrap .ctrl button:active {
+  transform: translateY(0.5px) scale(0.95);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.vdo__wrap .ctrl button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+}
+.vdo__wrap .ctrl svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+@keyframes vdo-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.55;
+  }
+  60% {
+    opacity: 0.18;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 0;
+  }
+}
+@keyframes vdo-wave-2 {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.45;
+  }
+  80% {
+    opacity: 0.14;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.7);
+    opacity: 0;
+  }
+}
+.vdo__wrap .ctrl .vctrl {
+  z-index: 1;
+}
+.vdo__wrap .ctrl .vctrl .vctrl-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.78);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(3px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+}
+.vdo__wrap .ctrl .vctrl .vctrl-popover::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(0, 0, 0, 0.78);
+}
+.vdo__wrap .ctrl .vctrl:hover .vctrl-popover, .vdo__wrap .ctrl .vctrl:focus-visible .vctrl-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-on {
+  position: relative;
+}
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-on::before,
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-on::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 2px solid currentcolor;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+}
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-on::before {
+  animation: vdo-wave 1.2s ease-out infinite;
+}
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-on::after {
+  animation: vdo-wave-2 1.2s ease-out infinite;
+  animation-delay: 0.25s;
+}
+.vdo__wrap .ctrl.muted .vctrl-volume-off {
+  display: inline-flex;
+}
+.vdo__wrap .ctrl.muted .vctrl-volume-on {
+  display: none;
+}
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-off {
+  display: none;
+}
+.vdo__wrap .ctrl:not(.muted) .vctrl-volume-on {
+  display: inline-flex;
+}

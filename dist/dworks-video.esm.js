@@ -1,4 +1,12 @@
-/*! dworks v0.1.0 */
+/*!
+ * @name dworks-video
+ * @version v1.0.0
+ * @author Choi Sunki <sk@daltan.net>
+ * @description Operational Video Engine for DALTAN WORKS
+ * @repository https://github.com/choisunki/dworks
+ * @license MIT
+ * @preserve
+ */
 
 // src/modules/video.js
 var rootGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : {};

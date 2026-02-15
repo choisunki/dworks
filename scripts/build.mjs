@@ -1,12 +1,22 @@
-import { mkdirSync, rmSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { build } from 'esbuild';
+import { compile } from 'sass';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const banner = `/*! ${pkg.name} v${pkg.version} */`;
+const defaultBanner = `/*! ${pkg.name} v${pkg.version} */`;
+const videoBanner = `/*!
+ * @name dworks-video
+ * @version v1.0.0
+ * @author Choi Sunki <sk@daltan.net>
+ * @description Operational Video Engine for DALTAN WORKS
+ * @repository https://github.com/choisunki/dworks
+ * @license MIT
+ * @preserve
+ */`;
 
 const entries = [
-  { name: 'dworks', entry: 'src/index.js', globalName: 'DWorks' },
-  { name: 'dworks-video', entry: 'src/modules/video.js', globalName: 'DWorksVideo' },
+  { name: 'dworks', entry: 'src/index.js', globalName: 'DWorks', banner: defaultBanner },
+  { name: 'dworks-video', entry: 'src/modules/video.js', globalName: 'DWorksVideo', banner: videoBanner },
 ];
 
 rmSync('dist', { recursive: true, force: true });
@@ -24,7 +34,7 @@ for (const target of entries) {
       platform: 'browser',
       target: ['es2017'],
       sourcemap: true,
-      banner: { js: banner },
+      banner: { js: target.banner },
     }),
     build({
       entryPoints: [target.entry],
@@ -36,7 +46,7 @@ for (const target of entries) {
       target: ['es2017'],
       minify: true,
       sourcemap: true,
-      banner: { js: banner },
+      banner: { js: target.banner },
     }),
     build({
       entryPoints: [target.entry],
@@ -46,7 +56,7 @@ for (const target of entries) {
       platform: 'browser',
       target: ['es2017'],
       sourcemap: true,
-      banner: { js: banner },
+      banner: { js: target.banner },
     }),
     build({
       entryPoints: [target.entry],
@@ -57,10 +67,23 @@ for (const target of entries) {
       target: ['es2017'],
       minify: true,
       sourcemap: true,
-      banner: { js: banner },
+      banner: { js: target.banner },
     })
   );
 }
 
 await Promise.all(builds);
-console.log('Built dist artifacts for dworks and dworks-video');
+
+const expandedVideoCss = compile('src/scss/video.scss', {
+  style: 'expanded',
+  sourceMap: false,
+});
+writeFileSync('dist/dworks-video.css', `${videoBanner}\n${expandedVideoCss.css}`);
+
+const compressedVideoCss = compile('src/scss/video.scss', {
+  style: 'compressed',
+  sourceMap: false,
+});
+writeFileSync('dist/dworks-video.min.css', `${videoBanner}\n${compressedVideoCss.css}`);
+
+console.log('Built dist artifacts for dworks/dworks-video JS and dworks-video CSS');

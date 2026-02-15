@@ -13,7 +13,9 @@
     "./video": {
       "import": "./dist/dworks-video.esm.js",
       "default": "./dist/dworks-video.js"
-    }
+    },
+    "./video.css": "./dist/dworks-video.css",
+    "./video.min.css": "./dist/dworks-video.min.css"
   },
   "unpkg": "./dist/dworks.min.js",
   "jsdelivr": "./dist/dworks.min.js",
@@ -28,7 +30,8 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "sass": "^1.97.3"
   },
   "keywords": [
     "video",

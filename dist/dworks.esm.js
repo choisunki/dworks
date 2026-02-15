@@ -1,4 +1,4 @@
-/*! dworks v0.1.0 */
+/*! dworks v1.0.0 */
 
 // src/modules/video.js
 var rootGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : {};
