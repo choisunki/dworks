@@ -1,6 +1,6 @@
 {
   "name": "dworks",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DWorks browser modules for GitHub/CDN distribution",
   "type": "module",
   "main": "./dist/dworks.js",
@@ -13,6 +13,10 @@
     "./video": {
       "import": "./dist/dworks-video.esm.js",
       "default": "./dist/dworks-video.js"
+    },
+    "./youtube": {
+      "import": "./dist/dworks-youtube.esm.js",
+      "default": "./dist/dworks-youtube.js"
     },
     "./video.css": "./dist/dworks-video.css",
     "./video.min.css": "./dist/dworks-video.min.css"

@@ -129,11 +129,41 @@ var rootGlobal = typeof globalThis !== 'undefined'
    * @param {String} vid
    * @param {Boolean} enableSound
    */
+  function muteOtherVideos(activeVid) {
+    var allVideos = qa('.vdo__wrap .video');
+    if (!allVideos || !allVideos.length) return;
+
+    for (var i = 0; i < allVideos.length; i++) {
+      var v = allVideos[i];
+      if (!isVideo(v)) continue;
+      if (activeVid && v.id === activeVid) continue;
+
+      try { v.muted = true; } catch (e) {}
+      if (v.id) syncVctrlA11yByVid(v.id);
+    }
+  }
+
+  function notifyMediaUnmute(kind, id) {
+    if (typeof rootGlobal.CustomEvent !== 'function') return;
+    try {
+      var evt = new CustomEvent('dworks-media:unmute', {
+        detail: { kind: kind, id: id || '' }
+      });
+      document.dispatchEvent(evt);
+    } catch (e) {}
+  }
+
   function setVideoVolumeByVid(vid, enableSound, hooks) {
     if (!vid) return;
 
     var el = document.getElementById(vid);
     if (!isVideo(el)) return;
+
+    var shouldExclusiveAudio = !hooks || hooks.exclusiveAudio !== false;
+    if (enableSound && shouldExclusiveAudio) {
+      muteOtherVideos(vid);
+      notifyMediaUnmute('video', vid);
+    }
 
     el.muted = !enableSound;
 
@@ -144,6 +174,18 @@ var rootGlobal = typeof globalThis !== 'undefined'
 
   // 전역 document 위임 클릭 핸들러는 1개만 유지하고, 인스턴스별로 ref count 관리.
   var globalCtrlDelegation = {
+    bound: false,
+    refs: 0,
+    handler: null
+  };
+
+  var globalClickToggleDelegation = {
+    bound: false,
+    refs: 0,
+    handler: null
+  };
+
+  var globalMediaCoordination = {
     bound: false,
     refs: 0,
     handler: null
@@ -189,6 +231,119 @@ var rootGlobal = typeof globalThis !== 'undefined'
     globalCtrlDelegation.handler = null;
     globalCtrlDelegation.bound = false;
     globalCtrlDelegation.refs = 0;
+  }
+
+  function showTapIndicatorByVid(vid, isPlay) {
+    if (!vid) return;
+    var wrap = q('.vdo__wrap .video#' + vid);
+    if (!wrap) return;
+    var root = wrap.closest ? wrap.closest('.vdo__wrap') : null;
+    if (!root) return;
+
+    var indicator = root.querySelector('.vdo__tap-indicator');
+    if (!indicator) return;
+
+    if (indicator._hideTimer) {
+      try { clearTimeout(indicator._hideTimer); } catch (e0) {}
+      indicator._hideTimer = null;
+    }
+
+    indicator.classList.remove('show');
+    // Force reflow so repeated rapid taps restart animation reliably.
+    try { void indicator.offsetWidth; } catch (e1) {}
+
+    indicator.classList.remove('is-play');
+    indicator.classList.remove('is-pause');
+    indicator.classList.add(isPlay ? 'is-play' : 'is-pause');
+    indicator.classList.add('show');
+
+    indicator._hideTimer = setTimeout(function () {
+      indicator.classList.remove('show');
+      indicator._hideTimer = null;
+    }, 640);
+  }
+
+  function bindGlobalClickToggle() {
+    if (globalClickToggleDelegation.bound) {
+      globalClickToggleDelegation.refs += 1;
+      return;
+    }
+
+    globalClickToggleDelegation.handler = function (e) {
+      var target = e.target;
+      if (!target || !target.closest) return;
+      if (target.closest('.ctrl')) return;
+
+      var videoEl = target.closest('.vdo__wrap .video');
+      if (!videoEl || !isVideo(videoEl)) return;
+      var wrap = videoEl.closest ? videoEl.closest('.vdo__wrap') : null;
+      if (!wrap) return;
+      if (wrap.getAttribute('data-click-toggle') !== '1') return;
+
+      var shouldPlay = !!(videoEl.paused || videoEl.ended);
+      controlVideo(videoEl, shouldPlay);
+      if (videoEl.id) showTapIndicatorByVid(videoEl.id, shouldPlay);
+    };
+
+    document.addEventListener('click', globalClickToggleDelegation.handler, false);
+    globalClickToggleDelegation.bound = true;
+    globalClickToggleDelegation.refs = 1;
+  }
+
+  function unbindGlobalClickToggle() {
+    if (!globalClickToggleDelegation.bound) return;
+
+    globalClickToggleDelegation.refs -= 1;
+    if (globalClickToggleDelegation.refs > 0) return;
+
+    try {
+      document.removeEventListener('click', globalClickToggleDelegation.handler, false);
+    } catch (e) {}
+
+    globalClickToggleDelegation.handler = null;
+    globalClickToggleDelegation.bound = false;
+    globalClickToggleDelegation.refs = 0;
+  }
+
+  function bindGlobalMediaCoordination() {
+    if (globalMediaCoordination.bound) {
+      globalMediaCoordination.refs += 1;
+      return;
+    }
+
+    globalMediaCoordination.handler = function (e) {
+      var detail = e && e.detail ? e.detail : {};
+      var kind = detail.kind || '';
+      var id = detail.id || '';
+
+      if (kind === 'video') {
+        muteOtherVideos(id);
+        return;
+      }
+
+      if (kind === 'youtube') {
+        muteOtherVideos('');
+      }
+    };
+
+    document.addEventListener('dworks-media:unmute', globalMediaCoordination.handler, false);
+    globalMediaCoordination.bound = true;
+    globalMediaCoordination.refs = 1;
+  }
+
+  function unbindGlobalMediaCoordination() {
+    if (!globalMediaCoordination.bound) return;
+
+    globalMediaCoordination.refs -= 1;
+    if (globalMediaCoordination.refs > 0) return;
+
+    try {
+      document.removeEventListener('dworks-media:unmute', globalMediaCoordination.handler, false);
+    } catch (e) {}
+
+    globalMediaCoordination.handler = null;
+    globalMediaCoordination.bound = false;
+    globalMediaCoordination.refs = 0;
   }
 
   // ratio: '16/9' -> '56.25%'
@@ -280,6 +435,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
       playsinline: true,
       loop: true,
       vctrl: true,
+      click_toggle: false,
       preload: (opts && (opts.play_on_enter || opts.pause_on_leave)) ? 'metadata' : 'auto',
       wrapClass: 'vdo__wrap',
       a11yLabel: '브랜드 영상',
@@ -304,6 +460,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
     if (fit !== 'contain') fit = 'cover';
 
     var wrapStyle = '--ar:' + ratio + ';--ar-pad:' + arPad + ';--fit:' + fit + ';';
+    var clickToggleAttr = o.click_toggle ? ' data-click-toggle="1"' : '';
 
     // vctrl=true면 vid 필요. 없으면 생성.
     if (o.vctrl && !o.vid) {
@@ -320,7 +477,8 @@ var rootGlobal = typeof globalThis !== 'undefined'
       o.muted ? 'muted' : '',
       o.autoplay ? 'autoplay' : '',
       o.loop ? 'loop' : '',
-      o.playsinline ? 'playsinline' : ''
+      'playsinline',
+      'webkit-playsinline'
     ].filter(function (v) { return v !== ''; }).join(' ');
 
     // vctrl
@@ -345,9 +503,10 @@ var rootGlobal = typeof globalThis !== 'undefined'
     }
 
     return [
-      '<div class="' + o.wrapClass + '" style="' + wrapStyle + '">',
+      '<div class="' + o.wrapClass + '" style="' + wrapStyle + '"' + clickToggleAttr + '>',
       '  <span class="vdo__spacer" aria-hidden="true"></span>',
       '  <video ' + attrs + ' class="video" aria-label="' + o.a11yLabel + '"></video>',
+      (o.click_toggle ? '  <span class="vdo__tap-indicator" aria-hidden="true"><span class="vdo__tap-icon vdo__tap-icon-play"></span><span class="vdo__tap-icon vdo__tap-icon-pause"><span class="bar"></span><span class="bar"></span></span></span>' : ''),
       vctrlHtml,
       '</div>'
     ].join('');
@@ -360,7 +519,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
    * 비디오 모듈 인스턴스를 생성한다.
    *
    * options:
-   * - vdos: [{ url, mount, observe, play_on_enter, pause_on_leave, view_threshold, vctrl, vid, ratio, fit, poster, ... }]
+   * - vdos: [{ url, mount, observe, play_on_enter, pause_on_leave, view_threshold, vctrl, click_toggle, vid, ratio, fit, poster, ... }]
    * - icons: { volume_on, volume_off } (선택)
    * - log: Boolean (선택)
    * - onPlaybackBlocked: Function ({ video, error, reason }) (선택)
@@ -372,11 +531,14 @@ var rootGlobal = typeof globalThis !== 'undefined'
       vdos: [],
       icons: null,
       log: false,
+      exclusiveAudio: true,
       viewportChecker: null
     }, options || {});
 
     var state = {
       _vctrlBound: false,
+      _clickToggleBound: false,
+      _mediaBusBound: false,
       _vdoObserver: null,
       _vdoMap: null
     };
@@ -414,6 +576,7 @@ var rootGlobal = typeof globalThis !== 'undefined'
     function vdoVolume(vid, enableSound) {
       setVideoVolumeByVid(vid, enableSound, {
         log: cfg.log,
+        exclusiveAudio: cfg.exclusiveAudio,
         onPlaybackBlocked: cfg.onPlaybackBlocked
       });
     }
@@ -587,6 +750,14 @@ var rootGlobal = typeof globalThis !== 'undefined'
       }
 
       bindVideoCtrls();
+      if (!state._clickToggleBound) {
+        bindGlobalClickToggle();
+        state._clickToggleBound = true;
+      }
+      if (!state._mediaBusBound) {
+        bindGlobalMediaCoordination();
+        state._mediaBusBound = true;
+      }
       bindVideoVisibility(list);
 
       info('[DWorksVideo] init ok');
@@ -607,6 +778,16 @@ var rootGlobal = typeof globalThis !== 'undefined'
         unbindGlobalVideoCtrls();
       }
       state._vctrlBound = false;
+
+      if (state._clickToggleBound) {
+        unbindGlobalClickToggle();
+      }
+      state._clickToggleBound = false;
+
+      if (state._mediaBusBound) {
+        unbindGlobalMediaCoordination();
+      }
+      state._mediaBusBound = false;
 
       info('[DWorksVideo] destroy ok');
     }

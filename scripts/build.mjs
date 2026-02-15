@@ -6,9 +6,18 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 const defaultBanner = `/*! ${pkg.name} v${pkg.version} */`;
 const videoBanner = `/*!
  * @name dworks-video
- * @version v1.0.0
+ * @version v${pkg.version}
  * @author Choi Sunki <sk@daltan.net>
  * @description Operational Video Engine for DALTAN WORKS
+ * @repository https://github.com/choisunki/dworks
+ * @license MIT
+ * @preserve
+ */`;
+const youtubeBanner = `/*!
+ * @name dworks-youtube
+ * @version v${pkg.version}
+ * @author Choi Sunki <sk@daltan.net>
+ * @description Operational Youtube Engine for DALTAN WORKS
  * @repository https://github.com/choisunki/dworks
  * @license MIT
  * @preserve
@@ -17,6 +26,7 @@ const videoBanner = `/*!
 const entries = [
   { name: 'dworks', entry: 'src/index.js', globalName: 'DWorks', banner: defaultBanner },
   { name: 'dworks-video', entry: 'src/modules/video.js', globalName: 'DWorksVideo', banner: videoBanner },
+  { name: 'dworks-youtube', entry: 'src/modules/youtube.js', globalName: 'DWorksYoutube', banner: youtubeBanner },
 ];
 
 rmSync('dist', { recursive: true, force: true });
@@ -86,4 +96,4 @@ const compressedVideoCss = compile('src/scss/video.scss', {
 });
 writeFileSync('dist/dworks-video.min.css', `${videoBanner}\n${compressedVideoCss.css}`);
 
-console.log('Built dist artifacts for dworks/dworks-video JS and dworks-video CSS');
+console.log('Built dist artifacts for dworks/dworks-video/dworks-youtube JS and dworks-video CSS');

@@ -79,6 +79,80 @@ $vw-fixed: true !default;
     z-index: 1;
   }
 
+  .vdo__tap-indicator {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 78px;
+    height: 78px;
+    margin-left: -39px;
+    margin-top: -39px;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 58%);
+    z-index: 3;
+    opacity: 0;
+    transform: scale(0.86);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgb(0 0 0 / 28%);
+  }
+
+  .vdo__tap-indicator .vdo__tap-icon {
+    display: none;
+  }
+
+  .vdo__tap-indicator.is-play .vdo__tap-icon-play {
+    display: block;
+    width: 0;
+    height: 0;
+    border-top: 11px solid transparent;
+    border-bottom: 11px solid transparent;
+    border-left: 19px solid #fff;
+    margin-left: 4px;
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 20%));
+  }
+
+  .vdo__tap-indicator.is-pause .vdo__tap-icon-pause {
+    display: flex;
+    gap: 6px;
+  }
+
+  .vdo__tap-indicator.is-pause .vdo__tap-icon-pause .bar {
+    width: 6px;
+    height: 20px;
+    border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 1px 1px rgb(0 0 0 / 18%);
+  }
+
+  .vdo__tap-indicator.show {
+    animation: vdo-tap-pop 0.64s cubic-bezier(.22, .9, .34, 1) forwards;
+  }
+
+  @keyframes vdo-tap-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.78);
+    }
+
+    18% {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+
+    54% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.08);
+    }
+  }
+
   @supports not (aspect-ratio: 1 / 1) {
     .vdo__spacer {
       display: block;
