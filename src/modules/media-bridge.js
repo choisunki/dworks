@@ -1,5 +1,5 @@
 /**
- * DWorks Media Bridge v1.1.0
+ * DWorks Media Bridge v1.1.1
  * - 비디오/유튜브 핸드셰이크 + 미디어 런타임을 통합
  * - w.html에서는 bootstrapping만 유지하도록 설계
  */

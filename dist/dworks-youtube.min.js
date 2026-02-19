@@ -1,6 +1,6 @@
 /*!
  * @name dworks-youtube
- * @version v1.1.0
+ * @version v1.1.1
  * @author Choi Sunki <sk@daltan.net>
  * @description Operational Youtube Engine for DALTAN WORKS
  * @repository https://github.com/choisunki/dworks

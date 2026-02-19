@@ -42,17 +42,17 @@ import 'dworks/video.css';
 ## CDN usage (GitHub tag)
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.0/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.0/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.0/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-media-bridge.min.js"></script>
 ```
 
 ## CDN usage (npm)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.0/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.0/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.0/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-media-bridge.min.js"></script>
 ```
 
 ## Release flow

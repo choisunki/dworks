@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
-import { build } from 'esbuild';
+import { build, transform } from 'esbuild';
 import { compile } from 'sass';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -38,6 +38,7 @@ mkdirSync('dist', { recursive: true });
 
 const builds = [];
 for (const target of entries) {
+  if (target.name === 'dworks-media-bridge') continue;
   builds.push(
     build({
       entryPoints: [target.entry],
@@ -87,6 +88,18 @@ for (const target of entries) {
 }
 
 await Promise.all(builds);
+
+const mediaBridgeSource = readFileSync('src/modules/media-bridge.js', 'utf8');
+writeFileSync('dist/dworks-media-bridge.js', mediaBridgeSource);
+writeFileSync('dist/dworks-media-bridge.esm.js', mediaBridgeSource);
+
+const mediaBridgeMin = await transform(mediaBridgeSource, {
+  loader: 'js',
+  minify: true,
+  target: 'es2017',
+});
+writeFileSync('dist/dworks-media-bridge.min.js', `${mediaBridgeBanner}\n${mediaBridgeMin.code}`);
+writeFileSync('dist/dworks-media-bridge.esm.min.js', `${mediaBridgeBanner}\n${mediaBridgeMin.code}`);
 
 const expandedVideoCss = compile('src/scss/video.scss', {
   style: 'expanded',
