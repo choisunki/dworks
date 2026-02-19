@@ -18,6 +18,10 @@
       "import": "./dist/dworks-youtube.esm.js",
       "default": "./dist/dworks-youtube.js"
     },
+    "./media-bridge": {
+      "import": "./dist/dworks-media-bridge.esm.js",
+      "default": "./dist/dworks-media-bridge.js"
+    },
     "./video.css": "./dist/dworks-video.css",
     "./video.min.css": "./dist/dworks-video.min.css"
   },

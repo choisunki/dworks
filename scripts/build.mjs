@@ -22,11 +22,15 @@ const youtubeBanner = `/*!
  * @license MIT
  * @preserve
  */`;
+const mediaBridgeBanner = `/*!
+ * DWorks Media Bridge v${pkg.version}
+ */`;
 
 const entries = [
   { name: 'dworks', entry: 'src/index.js', globalName: 'DWorks', banner: defaultBanner },
   { name: 'dworks-video', entry: 'src/modules/video.js', globalName: 'DWorksVideo', banner: videoBanner },
   { name: 'dworks-youtube', entry: 'src/modules/youtube.js', globalName: 'DWorksYoutube', banner: youtubeBanner },
+  { name: 'dworks-media-bridge', entry: 'src/modules/media-bridge.js', globalName: 'DWorksMediaBridge', banner: mediaBridgeBanner },
 ];
 
 rmSync('dist', { recursive: true, force: true });
@@ -96,4 +100,4 @@ const compressedVideoCss = compile('src/scss/video.scss', {
 });
 writeFileSync('dist/dworks-video.min.css', `${videoBanner}\n${compressedVideoCss.css}`);
 
-console.log('Built dist artifacts for dworks/dworks-video/dworks-youtube JS and dworks-video CSS');
+console.log('Built dist artifacts for dworks/dworks-video/dworks-youtube/dworks-media-bridge JS and dworks-video CSS');
