@@ -222,6 +222,11 @@
   visibility: visible;
   transform: translateY(0);
 }
+@media (hover: none), (pointer: coarse) {
+  .vdo__wrap .ctrl .vctrl .vctrl-popover {
+    display: none !important;
+  }
+}
 .vdo__wrap .ctrl:not(.muted) .vctrl-volume-on {
   position: relative;
 }

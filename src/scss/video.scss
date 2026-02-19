@@ -287,6 +287,12 @@ $vw-fixed: true !default;
         visibility: visible;
         transform: translateY(0);
       }
+
+      @media (hover: none), (pointer: coarse) {
+        .vctrl-popover {
+          display: none !important;
+        }
+      }
     }
 
     &:not(.muted) {
