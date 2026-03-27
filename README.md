@@ -8,6 +8,8 @@ GitHub/NPM 기반 CDN 배포를 위한 브라우저 모듈 저장소입니다.
 - `src/modules/youtube.js`: 유튜브 모듈 소스
 - `src/modules/image-load.js`: 이미지 로드 유틸리티 모듈 소스
 - `src/modules/media-bridge.js`: 비디오/유튜브 브릿지 모듈 소스
+- `src/modules/jquery.sticky.js`: jQuery sticky 탭 플러그인 소스
+- `src/modules/jquery.dtimer.js`: jQuery dtimer 플러그인 소스
 - `src/index.js`: 전체 엔트리(향후 모듈 확장 지점)
 - `scripts/build.mjs`: 빌드/미니파이 스크립트
 - `src/scss/video.scss`: 비디오 전용 스타일 소스
@@ -27,6 +29,8 @@ npm run build
 - `dist/dworks-youtube.min.js`: 유튜브 모듈 단독 CDN 파일
 - `dist/dworks-image-load.min.js`: 이미지 로더 모듈 단독 CDN 파일
 - `dist/dworks-media-bridge.min.js`: 미디어 브릿지 모듈 단독 CDN 파일
+- `dist/dworks-jquery-sticky.min.js`: jQuery sticky 플러그인 CDN 파일
+- `dist/dworks-jquery-dtimer.min.js`: jQuery dtimer 플러그인 CDN 파일
 - `dist/dworks-video.css`: 비디오 전용 스타일 파일
 - `dist/dworks-video.min.css`: 비디오 전용 미니파이 스타일 파일
 - `dist/*.esm.js`: ESM 용 파일
@@ -39,6 +43,8 @@ import DWorksVideo from 'dworks/video';
 import DWorksYoutube from 'dworks/youtube';
 import DWorksImageLoad from 'dworks/image-load';
 import DWorksMediaBridge from 'dworks/media-bridge';
+import 'dworks/jquery-sticky';
+import 'dworks/jquery-dtimer';
 import 'dworks/video.css';
 ```
 
@@ -61,22 +67,53 @@ DWorksImageLoad.dload(document.querySelectorAll('.section'), {
 - `img.complete` 캐시 판정 시 `naturalWidth > 0` 조건으로 깨진 이미지 오판을 방지
 - `sections`가 빈 목록이어도 콜백은 1회 호출됨
 
+## jQuery plugins
+
+두 플러그인은 jQuery에 등록되는 형태라서, jQuery 로딩 후 사용해야 합니다.
+
+### stickyTab
+
+```js
+import 'dworks/jquery-sticky';
+
+$('.sticky-tab').stickyTab({
+  linkSelector: '.sticky-tab__link',
+  fixedClass: 'is-fixed'
+});
+```
+
+### dtimer
+
+```js
+import 'dworks/jquery-dtimer';
+
+$('.countdown').dtimer({
+  onEnd() {
+    console.log('Timer Finished');
+  }
+});
+```
+
 ## CDN usage (GitHub tag)
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-image-load.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.1.1/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-image-load.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-jquery-sticky.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-jquery-dtimer.min.js"></script>
 ```
 
 ## CDN usage (npm)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-image-load.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.1.1/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-image-load.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-jquery-sticky.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-jquery-dtimer.min.js"></script>
 ```
 
 ## Release flow

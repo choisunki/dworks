@@ -34,6 +34,24 @@ const imageLoadBanner = `/*!
 const mediaBridgeBanner = `/*!
  * DWorks Media Bridge v${pkg.version}
  */`;
+const jqueryStickyBanner = `/*!
+ * @name dworks-jquery-sticky
+ * @version v${pkg.version}
+ * @author Choi Sunki <sk@daltan.net>
+ * @description DWorks jQuery sticky plugin
+ * @repository https://github.com/choisunki/dworks
+ * @license MIT
+ * @preserve
+ */`;
+const jqueryDtimerBanner = `/*!
+ * @name dworks-jquery-dtimer
+ * @version v${pkg.version}
+ * @author Choi Sunki <sk@daltan.net>
+ * @description DWorks jQuery dtimer plugin
+ * @repository https://github.com/choisunki/dworks
+ * @license MIT
+ * @preserve
+ */`;
 
 const entries = [
   { name: 'dworks', entry: 'src/index.js', globalName: 'DWorks', banner: defaultBanner },
@@ -41,6 +59,8 @@ const entries = [
   { name: 'dworks-youtube', entry: 'src/modules/youtube.js', globalName: 'DWorksYoutube', banner: youtubeBanner },
   { name: 'dworks-image-load', entry: 'src/modules/image-load.js', globalName: 'DWorksImageLoad', banner: imageLoadBanner },
   { name: 'dworks-media-bridge', entry: 'src/modules/media-bridge.js', globalName: 'DWorksMediaBridge', banner: mediaBridgeBanner },
+  { name: 'dworks-jquery-sticky', entry: 'src/modules/jquery.sticky.js', globalName: 'DWorksJquerySticky', banner: jqueryStickyBanner },
+  { name: 'dworks-jquery-dtimer', entry: 'src/modules/jquery.dtimer.js', globalName: 'DWorksJqueryDtimer', banner: jqueryDtimerBanner },
 ];
 
 rmSync('dist', { recursive: true, force: true });
