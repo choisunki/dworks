@@ -30,8 +30,10 @@ var DWorksJquerySticky = (() => {
       };
       this._bound = false;
       this._scrollTimer = null;
+      this._activeOnScrollEndTimer = null;
       this._resizeTimer = null;
       this._resizeObserver = null;
+      this._isProgrammaticScrolling = false;
       this._ns = "." + PLUGIN_NAME + "." + this._getInstanceId();
       this.init();
     }
@@ -180,6 +182,9 @@ var DWorksJquerySticky = (() => {
       }
     };
     StickyTab.prototype.updateActiveState = function() {
+      if (this.options.activeOnScrollEnd && this._isProgrammaticScrolling) {
+        return;
+      }
       var self = this;
       var scrollTop = $(window).scrollTop();
       var offset = this.getActiveOffset();
@@ -212,10 +217,26 @@ var DWorksJquerySticky = (() => {
       var self = this;
       if (!$target || !$target.length) return;
       var top = this.getOffsetTop($target) - this.getActiveOffset() + (this.options.scrollAdjust || 0);
+      var shouldApplyOnScrollEnd = !!this.options.activeOnScrollEnd;
+      if (shouldApplyOnScrollEnd) {
+        this._isProgrammaticScrolling = true;
+        clearTimeout(this._activeOnScrollEndTimer);
+      }
       window.scrollTo({
         top,
         behavior: this.options.speed === 0 ? "auto" : "smooth"
       });
+      if (shouldApplyOnScrollEnd) {
+        var finalizeActive = function() {
+          self._isProgrammaticScrolling = false;
+          self.updateActiveState();
+        };
+        if (this.options.speed > 0) {
+          this._activeOnScrollEndTimer = setTimeout(finalizeActive, this.options.speed);
+        } else {
+          finalizeActive();
+        }
+      }
       if (this.options.speed > 0 && typeof this.options.onScrollEnd === "function") {
         clearTimeout(this._scrollTimer);
         this._scrollTimer = setTimeout(function() {
@@ -259,9 +280,11 @@ var DWorksJquerySticky = (() => {
         var $target = self.getTargetElement($link);
         if (!$target.length) return;
         e.preventDefault();
-        self.$links.each(function(idx) {
-          $(this).parent().toggleClass(self.options.activeClass, this === $link[0]);
-        });
+        if (!self.options.activeOnScrollEnd) {
+          self.$links.each(function() {
+            $(this).parent().toggleClass(self.options.activeClass, this === $link[0]);
+          });
+        }
         self.scrollToTarget($target);
       });
       this._bound = true;
@@ -291,8 +314,10 @@ var DWorksJquerySticky = (() => {
     };
     StickyTab.prototype.destroy = function() {
       clearTimeout(this._scrollTimer);
+      clearTimeout(this._activeOnScrollEndTimer);
       clearTimeout(this._resizeTimer);
       clearTimeout(this._scrollDebounceTimer);
+      this._isProgrammaticScrolling = false;
       if (this._resizeObserver) {
         try {
           this._resizeObserver.disconnect();
@@ -361,6 +386,7 @@ var DWorksJquerySticky = (() => {
       debounceDelay: 10,
       resizeDelay: 80,
       useResizeObserver: true,
+      activeOnScrollEnd: false,
       usePlaceholder: true,
       placeholderClass: "sticky-tab__placeholder",
       onInit: null,
