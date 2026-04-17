@@ -78,9 +78,15 @@ import 'dworks/jquery-sticky';
 
 $('.sticky-tab').stickyTab({
   linkSelector: '.sticky-tab__link',
-  fixedClass: 'is-fixed'
+  fixedClass: 'is-fixed',
+  activeOnScrollEnd: true
 });
 ```
+
+- `activeOnScrollEnd` (기본값: `false`)
+- `false`: 탭 링크 클릭 즉시 `activeClass` 적용
+- `true`: 클릭 즉시 active 변경 없이 스크롤 이동 완료 후 현재 위치 기준으로 active 적용
+- 스무스 스크롤 사용 시, 도착 전에 active가 먼저 바뀌어 보이는 현상을 줄이고 실제 도착 섹션 기준으로 상태를 맞출 때 유용
 
 ### dtimer
 
@@ -97,23 +103,23 @@ $('.countdown').dtimer({
 ## CDN usage (GitHub tag)
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-image-load.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-media-bridge.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-jquery-sticky.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.0/dist/dworks-jquery-dtimer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-image-load.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-jquery-sticky.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-jquery-dtimer.min.js"></script>
 ```
 
 ## CDN usage (npm)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-image-load.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-media-bridge.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-jquery-sticky.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.0/dist/dworks-jquery-dtimer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-image-load.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-jquery-sticky.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-jquery-dtimer.min.js"></script>
 ```
 
 ## Release flow
