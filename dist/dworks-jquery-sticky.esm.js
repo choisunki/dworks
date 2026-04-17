@@ -1,6 +1,6 @@
 /*!
  * @name dworks-jquery-sticky
- * @version v1.2.1
+ * @version v1.2.2
  * @author Choi Sunki <sk@daltan.net>
  * @description DWorks jQuery sticky plugin
  * @repository https://github.com/choisunki/dworks

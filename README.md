@@ -103,23 +103,23 @@ $('.countdown').dtimer({
 ## CDN usage (GitHub tag)
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-image-load.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-media-bridge.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-jquery-sticky.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.1/dist/dworks-jquery-dtimer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.2/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.2/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.2/dist/dworks-image-load.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.2/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.2/dist/dworks-jquery-sticky.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/<owner>/<repo>@v1.2.2/dist/dworks-jquery-dtimer.min.js"></script>
 ```
 
 ## CDN usage (npm)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-youtube.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-image-load.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-media-bridge.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-jquery-sticky.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.1/dist/dworks-jquery-dtimer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.2/dist/dworks-video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.2/dist/dworks-youtube.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.2/dist/dworks-image-load.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.2/dist/dworks-media-bridge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.2/dist/dworks-jquery-sticky.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dworks@1.2.2/dist/dworks-jquery-dtimer.min.js"></script>
 ```
 
 ## Release flow
