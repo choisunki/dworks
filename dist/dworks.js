@@ -1,4 +1,4 @@
-/*! dworks v1.2.2 */
+/*! dworks v1.2.3 */
 var DWorks = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
